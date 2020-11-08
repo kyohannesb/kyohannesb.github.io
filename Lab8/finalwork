@@ -44,11 +44,61 @@
 			  ext: 'png'
 		  }).addTo(map);
 		  
-		  var provinces = L.geoJson(provinces).addTo(map);
+		  function getColor(value) {
+                return value > 50000000 ? '#54278f':
+                       value > 25000000  ? '#756bb1':
+                       value > 10000000  ? '#9e9ac8':
+                       value > 5000000  ? '#cbc9e2':
+                                          '#f2f0f7';
+            }
+
+		  function style(feature){
+                return {
+                    fillColor: getColor(feature.properties.POP10),
+                    weight: 2,
+                    opacity: 1,
+                    color: 'gray',
+                    fillOpacity: 0.9
+                };
+            }
+
 		  
-		  var provinces = L.geoJson(CovidCases).addTo(map);
+		  var provinces = new L.geoJson(provinces, {style:style}).addTo(map);
 		  
+		  var minValue = 100;
+		  var minRadius = 5;
+		  //the radius value is arbitrary, to produce good symbol sizes. if you're getting very large or small symbols, you can modify the math used here to determine scaling
+
+		  function calcRadius(val) {
+	      return 0.9 * Math.pow(val/minValue, .7) * minRadius;
+			}    
+
 		  
+		  var CovidCases = new L.geoJson(CovidCases, {
+			pointToLayer: function(feature, ll){
+          return L.circleMarker(ll, {
+                color: '#000000',
+                opacity: 1,
+                weight: 2,
+                fillColor: '#808080',
+                fillOpacity: .5,
+                //radius: 10
+                radius: calcRadius(feature.properties.covid)   
+				});
+				} 
+			}).addTo(map);
+
+		  
+		  var basemaps = {
+		      "Light Canvas": canvas,
+		      "Satellite Imagery": imagery
+		  };
+
+		  var overlaymaps = {
+             "China Provinces ": provinces
+		  }; 
+		  
+		  L.control.layers(basemaps, overlaymaps, {collapsed:false}).addTo(map);
 
         </script>
    </body>
