@@ -1,178 +1,87 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Kidus Berhe - Lab 8 | Leaflet II</title>
+  <head>
+    <title>Lab 9 Part 1 - Kidus Berhe</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+<script src="https://skeate.dev/Leaflet.timeline/examples/leaflet.timeline.js"></script>
 
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css"
-        crossorigin=""/>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        width: 100vw;
+        height: 100%;
+      }
+      .leaflet-bottom.leaflet-left {
+        width: 100%;
+      }
+      .leaflet-control-container .leaflet-timeline-controls {
+        box-sizing: border-box;
+        width: 100%;
+        margin: 0;
+        margin-bottom: 25px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
 
-        <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"
-        crossorigin=""></script>
-		
-		<script src="https://kyohannesb.github.io/Lab8/provinces.js"></script>
-		
-		<script src="https://kyohannesb.github.io/Lab8/CovidCases.js"></script>
-		
-		<style type="text/css">
-			html, body { margin: 0; padding: 0; height: 100%; }
-			#map { min-height: 100%; }
-            .legend {
-              padding: 8px 8px;
-              line-height: 18px;
-              background: rgba(255,255,255,1.0);
-              box-shadow: 0 0 15px rgba(0,0,0,0.2);
-              border-radius: 5px;
-          }
-
-           /* Optional: adjust the values below to change the appearance of the legend color boxes */
-           .legend i {
-              width: 20px;
-              height: 18px;
-              float: left;
-              margin-right: 8px;
-              opacity: 1.0;
-          }
-		</style>
-    </head>
-		
-    <body>
-        <div id="map"></div>
-
-        <script type="text/javascript">
-
-         var map = L.map('map', {
-              center: [34.666, 104.9569],
-              zoom: 5
-          });
-		  
-		 var imagery = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.{ext}', {
-			 attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-			 subdomains: 'abcd',
-			 minZoom: 0,
-			 maxZoom: 18,
-			 ext: 'png'
-		  }); 
-			 
-		 var canvas = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}{r}.{ext}', {
-			  attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-			  subdomains: 'abcd',
-			  minZoom: 0,
-			  maxZoom: 20,
-			  ext: 'png'
-		  }).addTo(map);
-		  
-		  function getColor(value) {
-                return value > 50000000 ? '#045a8d':
-                       value > 25000000  ? '#2b8cbe':
-                       value > 10000000  ? '#74a9cf':
-                       value > 5000000  ? '#bdc9e1':
-                                          '#f1eef6';
+    <script>
+          function getColorFor(value) {
+                return value >= 5 ? '#2166ac':
+					   value >= 3 ? '#67a9cf':
+					   value >= 1 ? '#d1e5f0':
+					   value >= 0 ? '#ffff00':
+					   value >= -1 ? '#fddbc7':
+					   value >= -3 ? '#ef8a62':
+                                     '#b2182b';
             }
 
-		  function style(feature){
-                return {
-                    fillColor: getColor(feature.properties.POP10),
-                    weight: 2,
-                    opacity: 1,
-                    color: 'gray',
-                    fillOpacity: 1.0
-                };
-            }
+      var background = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-background/{z}/{x}/{y}{r}.{ext}', {
+	attribution: '',
+	subdomains: 'abcd',
+	minZoom: 0,
+	maxZoom: 20,
+	ext: 'png'
+});
+      var map = L.map("map", {
+        layers: [background],
+        center: new L.LatLng(38, -95),
+        zoom: 5,
+      });
+      var timeline;
+      var timelineControl;
 
-		  
-		  var provinces = new L.geoJson(provinces, {style:style}).addTo(map);
-		  
-		  var minValue = 200;
-		  var minRadius = 7;
-		  //the radius value is arbitrary, to produce good symbol sizes. if you're getting very large or small symbols, you can modify the math used here to determine scaling
+      function onLoadData(data) {
+        timeline = L.timeline(data, {
+          style: function (data) {
+            return {
+              color: getColorFor(data.properties.DIFF),
+              fillOpacity: 0.9,
+            };
+          },
+          waitToUpdateMap: true,
+          onEachFeature: function (feature, layer) {
+            layer.bindTooltip('<h3>'+ feature.properties.NAME + '</h3> <p>' + ' <br>Biden: <strong>' + feature.properties.DEM + '</strong> <br>Trump: <strong>' + feature.properties.REP + '</strong></p>');
+          },
+        });
 
-		  function calcRadius(val) {
-	      return 0.9 * Math.pow(val/minValue, .7) * minRadius;
-			}
-	
-		  var onEachFeature = function(feature, layer) {
-          if (feature.properties) {
-          var prop = feature.properties;
-
-// make an html popup with properties
-//see how you can concatenate various attributes and text as needed, //including HTML markup, with single quotes. You pull out properties by //typing in prop and then putting the field in brackets.
-//you can do this because prop = feature.properties._____
-
-          var popup = '<h3>'+prop['Location']+'</h3>'+'<br>Cases Day 1: '+prop['1']+'<br>Cases Day 16: '+prop['covid'];
-            // add known info about event to the description
-          
- // you must create a layer property on each feature or else
- // the search results won't know where the item is on the map / layer
-           feature.layer = layer;
-           layer.bindPopup(popup, {maxWidth: "auto"});
-           }
-          }; // end onEachFeature
-
-		  
-		  var CovidCases = new L.geoJson(CovidCases, {
-		    onEachFeature : onEachFeature,
-			pointToLayer: function(feature, ll){
-          return L.circleMarker(ll, {
-                color: '#808080',
-                opacity: 1,
-                weight: 2,
-                fillColor: '#ca0020',
-                fillOpacity: 0.85,
-                //radius: 10
-                radius: calcRadius(feature.properties.covid)   
-				});
-				} 
-			}).addTo(map);
-
-		  
-		  var basemaps = {
-		      "Light Canvas": canvas,
-		      "Satellite Imagery": imagery
-		  };
-
-		  var overlaymaps = {
-             "China's 2019 Population by Provinces ": provinces,
-			 "Covid Cases by Province": CovidCases // remeber to remove
-		  }; 	 
-		  
-		  L.control.layers(basemaps, overlaymaps,{collapsed:false}).addTo(map);
-		  
-		  var legend = L.control({position: 'bottomright'}); // Try the other lower corner if you prefer.
-			 legend.onAdd = function (map) {
-
-		  var div = L.DomUtil.create('div', 'legend'),
-             grades = [0, 5000000, 10000000, 25000000, 50000000]; // break values to define the intervals of population - YOU WILL NEED TO MODIFY IT TO GET THE RIGHT LEGEND BREAKS
-
-             div.innerHTML = '<b>Population 2019 <br><br></b>';
-// The legend title, in this case it's Population 2019
-
-// Loop through the classes or “grades” and generate a label with a colored square for each interval.
-		  for (var i = 0; i < grades.length; i++) {
-			 div.innerHTML +=
-			 '<i style="background:' + getColor(grades[i] + 1) + '"></i>' +
-			 grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] +   '<br><br>' : '+');
-                  }
-
-                  return div;
-              };
-            
-            legend.addTo(map);
-			
-// Removing the legend when the layer is removed
-            map.on('overlaymapsremove', function(eventLayer){
-              if (eventLayer.name == 'provinces'){ // We use the key/display name to refer to the layer
-                map.removeControl(legend); // legend is the variable name of the layer legend
-              }
-            });
-
-            // Adding the legend when the layer is added
-            map.on('overlaymapsadd', function(eventLayer){
-              if (eventLayer.name == 'provinces'){
-                legend.addTo(map);
-              }
-            });
-		  
-
-        </script>
-   </body>
+        timelineControl = L.timelineSliderControl({
+          formatOutput: function (date) {
+            return new Date(date).toLocaleDateString();
+          },
+          enableKeyboardControls: true,
+        });
+        timeline.addTo(map);
+        timelineControl.addTo(map);
+        timelineControl.addTimelines(timeline);
+      }
+    </script>
+    <script src="https://electionmaps.github.io/statepolls5.jsonp"></script>
+  </body>
 </html>
+
