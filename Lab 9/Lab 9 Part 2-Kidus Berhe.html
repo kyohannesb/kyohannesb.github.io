@@ -47,12 +47,13 @@
     <script>
 	 function getColorFor(value) {
     return value >= 1 ? '#2166ac':
-    value >= 0  ? '#ffffbf':
+    value >= 0  ? '#fafa7d':
                   '#b2182b';
             }
 		
 	  var minValue = 1;
-	  var minRadius = 4;
+	  var minRadius = 6;
+
 	  function calcRadius(val) {
 	  return 1.0083 * Math.pow(val/minValue,.5716)*minRadius;
 			}
@@ -115,8 +116,6 @@
         });
         updateList(timeline);
       }
-	  
-
     </script>
     <script src="kyohannesb.github.io/Lab 9/elect.jsonp"></script>
   </body>
